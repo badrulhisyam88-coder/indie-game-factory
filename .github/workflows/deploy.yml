@@ -54,21 +54,33 @@ jobs:
           HTML
           for game_dir in games/*/; do
             game_id=$(basename "$game_dir")
-            if [ -f "$game_dir/godot/project.godot" ]; then
-              echo "Building $game_id..."
-              mkdir -p "public/$game_id"
-              cd "$game_dir/godot"
-              godot --headless --import 2>&1 | tail -5 || true
-              if godot --headless --export-release "Web" "../../../public/$game_id/index.html" 2>&1 | tail -10; then
-                cd "$GITHUB_WORKSPACE"
-                echo "<a href=\"./$game_id/\">$game_id</a>" >> public/index.html
-              else
-                cd "$GITHUB_WORKSPACE"
-                echo "Skipped $game_id (no Web export preset configured yet)"
-              fi
+            if [ ! -f "$game_dir/godot/project.godot" ]; then
+              continue
             fi
+            echo "::group::$game_id"
+            echo "Building $game_id..."
+            mkdir -p "public/$game_id"
+            cd "$game_dir/godot"
+            godot --headless --import > /tmp/godot-import.log 2>&1 || true
+            if godot --headless --export-release "Web" "../../../public/$game_id/index.html" > /tmp/godot-export.log 2>&1; then
+              cd "$GITHUB_WORKSPACE"
+              echo "<a href=\"./$game_id/\">$game_id</a>" >> public/index.html
+              tail -10 /tmp/godot-export.log
+            else
+              cd "$GITHUB_WORKSPACE"
+              rm -rf "public/$game_id"
+              echo "Skipped $game_id (export failed)"
+              tail -20 /tmp/godot-export.log
+            fi
+            echo "::endgroup::"
           done
           echo "</body></html>" >> public/index.html
+          echo "--- Deployment summary ---"
+          if grep -q 'href="\./' public/index.html; then
+            grep -oP 'href="\./\K[^/]+' public/index.html
+          else
+            echo "(no games built)"
+          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
