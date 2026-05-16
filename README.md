@@ -35,3 +35,19 @@ turning each one into social media content.
 ## Method
 
 See [METHOD.md](./METHOD.md) for the operating manual.
+
+## Known issues (deferred)
+
+- **CI: Godot exports succeed without a main scene.** When a game folder has
+  main.gd but no main.tscn, Godot's `--export-release Web` still produces a
+  5KB index.html wrapper. Our CI check `[ -s "$out" ]` treats this as success
+  and adds the game to the index page, but the URL loads a broken state
+  (Godot tries to run a missing main scene).
+
+  Fix when needed: add `&& [ -f "$GITHUB_WORKSPACE/public/$game_id/index.pck" ]`
+  to the success check in .github/workflows/deploy.yml. The .pck file is
+  Godot's packed game data — only produced on a real export.
+
+  Currently deferred because: as long as every committed game eventually
+  gets a main.tscn, the broken state self-resolves. Only matters if we
+  intentionally ship games without scenes (we don't).
