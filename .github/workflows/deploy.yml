@@ -62,8 +62,7 @@ jobs:
             mkdir -p "public/$game_id"
             cd "$game_dir/godot"
             godot --headless --import > /tmp/godot-import.log 2>&1 || true
-            godot --headless --export-release "Web" "../../../public/$game_id/index.html" > /tmp/godot-export.log 2>&1
-            godot_exit=$?
+            godot --headless --export-release "Web" "../../../public/$game_id/index.html" > /tmp/godot-export.log 2>&1 && godot_exit=0 || godot_exit=$?
             out="$GITHUB_WORKSPACE/public/$game_id/index.html"
             if [ $godot_exit -eq 0 ] && [ -s "$out" ]; then
               cd "$GITHUB_WORKSPACE"
