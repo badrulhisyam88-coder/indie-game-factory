@@ -1,0 +1,31 @@
+# Godot
+.import/
+.godot/
+export.cfg
+export_presets.cfg
+*.translation
+
+# Builds (we publish via Actions, no need to commit)
+games/*/builds/
+games/*/godot/export/
+games/*/godot/build/
+
+# Content raw files (large, regenerable)
+games/*/content/raw/
+games/*/content/clips/
+*.mp4
+*.mov
+*.mkv
+*.webm
+!games/*/content/captions/**/*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Local env
+.env
+.env.local

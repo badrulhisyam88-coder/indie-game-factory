@@ -1,0 +1,87 @@
+# Build all games to HTML5 and deploy to GitHub Pages.
+# Triggered on push to main. Builds every game folder; deploys the lot.
+
+name: Build & Deploy Games
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: 4.6.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot
+        run: |
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -O godot.zip
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          chmod +x /usr/local/bin/godot
+          godot --version
+
+      - name: Install export templates
+        run: |
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz" -O templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          unzip -q templates.tpz -d /tmp/templates
+          mv /tmp/templates/templates/* "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/"
+
+      - name: Build all games
+        run: |
+          mkdir -p public
+          cat > public/index.html <<'HTML'
+          <!DOCTYPE html>
+          <html><head><title>Indie Game Factory</title>
+          <style>body{font-family:system-ui;max-width:700px;margin:2em auto;padding:0 1em}
+          a{display:block;padding:.5em;border-bottom:1px solid #eee;text-decoration:none;color:#222}
+          a:hover{background:#f5f5f5}</style></head>
+          <body><h1>Games</h1>
+          HTML
+          for game_dir in games/*/; do
+            game_id=$(basename "$game_dir")
+            if [ -f "$game_dir/godot/project.godot" ]; then
+              echo "Building $game_id..."
+              mkdir -p "public/$game_id"
+              cd "$game_dir/godot"
+              godot --headless --import 2>&1 | tail -5 || true
+              if godot --headless --export-release "Web" "../../../public/$game_id/index.html" 2>&1 | tail -10; then
+                cd "$GITHUB_WORKSPACE"
+                echo "<a href=\"./$game_id/\">$game_id</a>" >> public/index.html
+              else
+                cd "$GITHUB_WORKSPACE"
+                echo "Skipped $game_id (no Web export preset configured yet)"
+              fi
+            fi
+          done
+          echo "</body></html>" >> public/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
