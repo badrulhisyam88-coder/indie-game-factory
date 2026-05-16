@@ -1,17 +1,18 @@
 extends Control
-# main.gd — minimal idle game template
-# Modify per-game. Keep tunables in the CONSTANTS block.
+# main.gd — Coffee Shop Idle
 
 # ---------- TUNABLE CONSTANTS ----------
-const START_RESOURCE: int = 0
-const MANUAL_GAIN: int = 1
-const UPGRADE_BASE_COST: int = 10
+const START_COFFEE: int = 0
+const MANUAL_GAIN: int = 1            # coffee per click
+const UPGRADE_BASE_COST: int = 10     # doubles brewing speed
 const UPGRADE_COST_MULT: float = 1.5
-const AUTO_TICK_INTERVAL: float = 1.0  # seconds
-const SAVE_PATH: String = "user://save.json"
+const BARISTA_BASE_COST: int = 100    # brews 1 coffee/sec
+const AUTO_TICK_INTERVAL: float = 1.0
+const CLICK_BUTTON_TEXT: String = "☕ Brew Coffee"
+const SAVE_PATH: String = "user://coffee_shop_save.json"
 
 # ---------- STATE ----------
-var resource: int = START_RESOURCE
+var coffee: int = START_COFFEE
 var manual_multiplier: int = 1
 var upgrade_count: int = 0
 var auto_per_tick: int = 0
@@ -26,7 +27,7 @@ var auto_per_tick: int = 0
 # ---------- LIFECYCLE ----------
 func _ready() -> void:
 	load_game()
-	click_button.pressed.connect(on_click)
+	click_button.pressed.connect(on_brew)
 	upgrade_button.pressed.connect(on_buy_upgrade)
 	auto_button.pressed.connect(on_buy_auto)
 	tick_timer.wait_time = AUTO_TICK_INTERVAL
@@ -35,30 +36,30 @@ func _ready() -> void:
 	refresh_ui()
 
 # ---------- ACTIONS ----------
-func on_click() -> void:
-	resource += MANUAL_GAIN * manual_multiplier
+func on_brew() -> void:
+	coffee += MANUAL_GAIN * manual_multiplier
 	refresh_ui()
 
 func on_buy_upgrade() -> void:
 	var cost := current_upgrade_cost()
-	if resource >= cost:
-		resource -= cost
+	if coffee >= cost:
+		coffee -= cost
 		manual_multiplier += 1
 		upgrade_count += 1
 		save_game()
 		refresh_ui()
 
 func on_buy_auto() -> void:
-	var cost := 100  # placeholder — tune per game
-	if resource >= cost:
-		resource -= cost
+	var cost := BARISTA_BASE_COST
+	if coffee >= cost:
+		coffee -= cost
 		auto_per_tick += 1
 		save_game()
 		refresh_ui()
 
 func on_tick() -> void:
 	if auto_per_tick > 0:
-		resource += auto_per_tick
+		coffee += auto_per_tick
 		refresh_ui()
 
 # ---------- HELPERS ----------
@@ -66,14 +67,15 @@ func current_upgrade_cost() -> int:
 	return int(UPGRADE_BASE_COST * pow(UPGRADE_COST_MULT, upgrade_count))
 
 func refresh_ui() -> void:
-	resource_label.text = "Resource: %d" % resource
-	upgrade_button.text = "Upgrade (cost %d) | x%d click" % [current_upgrade_cost(), manual_multiplier]
-	auto_button.text = "Auto (cost 100) | %d/sec" % auto_per_tick
+	resource_label.text = "☕ Coffee: %d" % coffee
+	click_button.text = CLICK_BUTTON_TEXT
+	upgrade_button.text = "Speed Upgrade (cost %d) | x%d brew" % [current_upgrade_cost(), manual_multiplier]
+	auto_button.text = "Hire Barista (cost %d) | %d/sec" % [BARISTA_BASE_COST, auto_per_tick]
 
 # ---------- SAVE / LOAD ----------
 func save_game() -> void:
 	var data := {
-		"resource": resource,
+		"coffee": coffee,
 		"manual_multiplier": manual_multiplier,
 		"upgrade_count": upgrade_count,
 		"auto_per_tick": auto_per_tick,
@@ -94,7 +96,7 @@ func load_game() -> void:
 	var parsed = JSON.parse_string(text)
 	if typeof(parsed) != TYPE_DICTIONARY:
 		return
-	resource = int(parsed.get("resource", START_RESOURCE))
+	coffee = int(parsed.get("coffee", START_COFFEE))
 	manual_multiplier = int(parsed.get("manual_multiplier", 1))
 	upgrade_count = int(parsed.get("upgrade_count", 0))
 	auto_per_tick = int(parsed.get("auto_per_tick", 0))

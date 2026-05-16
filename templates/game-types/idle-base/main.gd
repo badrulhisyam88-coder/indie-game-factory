@@ -8,6 +8,7 @@ const MANUAL_GAIN: int = 1
 const UPGRADE_BASE_COST: int = 10
 const UPGRADE_COST_MULT: float = 1.5
 const AUTO_TICK_INTERVAL: float = 1.0  # seconds
+const CLICK_BUTTON_TEXT: String = "Click me"
 const SAVE_PATH: String = "user://save.json"
 
 # ---------- STATE ----------
@@ -67,6 +68,7 @@ func current_upgrade_cost() -> int:
 
 func refresh_ui() -> void:
 	resource_label.text = "Resource: %d" % resource
+	click_button.text = CLICK_BUTTON_TEXT
 	upgrade_button.text = "Upgrade (cost %d) | x%d click" % [current_upgrade_cost(), manual_multiplier]
 	auto_button.text = "Auto (cost 100) | %d/sec" % auto_per_tick
 

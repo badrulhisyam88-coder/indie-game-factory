@@ -70,3 +70,8 @@ If you notice any of these, STOP and audit:
 If the system ever feels heavier than just opening Godot and coding, delete
 tooling until it feels lighter. The factory exists to accelerate shipping.
 The day it slows shipping, gut it.
+
+## WSL paths
+
+To open a project in Godot on Windows, use **File → Import** and enter:
+`\\wsl.localhost\Ubuntu-24.04\home\syam\projects\indie-game-factory\games\<game-id>\godot\project.godot`
