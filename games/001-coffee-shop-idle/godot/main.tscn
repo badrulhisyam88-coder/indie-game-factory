@@ -1,0 +1,37 @@
+[gd_scene load_steps=2 format=3 uid="uid://bidlefactory001"]
+
+[ext_resource type="Script" path="res://main.gd" id="1_main"]
+
+[node name="Main" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_main")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = 100.0
+
+[node name="ResourceLabel" type="Label" parent="VBox"]
+text = "Resource: 0"
+horizontal_alignment = 1
+
+[node name="ClickButton" type="Button" parent="VBox"]
+text = "Click me"
+
+[node name="UpgradeButton" type="Button" parent="VBox"]
+text = "Upgrade"
+
+[node name="AutoButton" type="Button" parent="VBox"]
+text = "Auto"
+
+[node name="TickTimer" type="Timer" parent="."]
+wait_time = 1.0
+autostart = false
