@@ -46,30 +46,78 @@ var game_won: bool = false
 
 # ---------- LIFECYCLE ----------
 func _ready() -> void:
-	pass  # connect signals, load_game(), start timer, refresh_ui()
+	start_time_ms = Time.get_ticks_msec()
+	brew_button.pressed.connect(on_brew)
+	laju_button.pressed.connect(on_buy_laju)
+	helper_button.pressed.connect(on_buy_helper)
+	tick_timer.wait_time = AUTO_TICK_INTERVAL
+	tick_timer.timeout.connect(on_tick)
+	tick_timer.start()
+	refresh_ui()
 
 # ---------- ACTIONS ----------
 func on_brew() -> void:
-	pass  # add current_best_price() to money, increment total_jagung_made, refresh_ui(), check_win()
+	money += current_best_price() * (1 + laju_level)
+	total_jagung_made += 1
+	refresh_ui()
 
 func on_buy_laju() -> void:
-	pass  # deduct LAGI_LAJU_COSTS[laju_level], increment laju_level, save_game(), refresh_ui()
+	if laju_level >= MAX_LAJU_LEVELS:
+		return
+	var cost: int = LAGI_LAJU_COSTS[laju_level]
+	if money < cost:
+		return
+	money -= cost
+	laju_level += 1
+	refresh_ui()
 
 func on_buy_helper() -> void:
-	pass  # deduct ADIK_TOLONG_COSTS[helpers], increment helpers, save_game(), refresh_ui()
+	if helpers >= MAX_HELPERS:
+		return
+	var cost: int = ADIK_TOLONG_COSTS[helpers]
+	if money < cost:
+		return
+	money -= cost
+	helpers += 1
+	refresh_ui()
 
 func on_unlock_flavor(flavor_id: String) -> void:
 	pass  # deduct unlock cost, append to unlocked_flavors, save_game(), refresh_ui(), check_win()
 
 func on_tick() -> void:
-	pass  # call on_brew() once per helper
+	if helpers > 0:
+		money += current_best_price() * helpers
+		total_jagung_made += helpers
+		refresh_ui()
 
 # ---------- HELPERS ----------
 func current_best_price() -> int:
-	pass  # return highest price among unlocked_flavors
+	var prices := {
+		"ori": ORI_PRICE, "susu": SUSU_PRICE, "susu_cheese": SUSU_CHEESE_PRICE,
+		"oreo": OREO_PRICE, "milo": MILO_PRICE, "nutella": NUTELLA_PRICE, "biscoff": BISCOFF_PRICE
+	}
+	var best := 0
+	for flavor in unlocked_flavors:
+		if prices.has(flavor):
+			best = max(best, prices[flavor])
+	return best
 
 func refresh_ui() -> void:
-	pass  # update all labels and button states
+	money_label.text = "RM %d" % money
+	jagung_count_label.text = "🌽 %d" % total_jagung_made
+	brew_button.text = "🌽 Buat Jagung (+RM %d)" % (current_best_price() * (1 + laju_level))
+	if laju_level >= MAX_LAJU_LEVELS:
+		laju_button.text = "⚡ Lagi Laju (MAX)"
+		laju_button.disabled = true
+	else:
+		laju_button.text = "⚡ Lagi Laju Lv%d (RM %d)" % [laju_level + 1, LAGI_LAJU_COSTS[laju_level]]
+		laju_button.disabled = money < LAGI_LAJU_COSTS[laju_level]
+	if helpers >= MAX_HELPERS:
+		helper_button.text = "👩‍🍳 Adik Tolong (MAX)"
+		helper_button.disabled = true
+	else:
+		helper_button.text = "👩‍🍳 Adik Tolong %d/3 (RM %d)" % [helpers + 1, ADIK_TOLONG_COSTS[helpers]]
+		helper_button.disabled = money < ADIK_TOLONG_COSTS[helpers]
 
 func check_win() -> void:
 	pass  # if all 7 flavors unlocked and not game_won, set game_won and call show_win_screen()
